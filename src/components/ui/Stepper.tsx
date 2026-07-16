@@ -53,7 +53,7 @@ export function Stepper({
             {i < steps.length - 1 && (
               <span
                 className={cn(
-                  "mx-3 h-px flex-1 min-w-6",
+                  "mx-3 h-0.5 flex-1 min-w-6 rounded-full",
                   completed ? "bg-sa-600" : "bg-gray-200 dark:bg-gray-700",
                 )}
               />
