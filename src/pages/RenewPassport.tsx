@@ -8,6 +8,9 @@ import {
   Calendar,
   Check,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
   Copy,
   CreditCard,
   Download,
@@ -48,6 +51,7 @@ type Result = "success" | "fail";
 interface FormState {
   confirmed: boolean;
   photoUploaded: boolean;
+  appointment: { date: string; time: string; office: "office1" | "office2" };
   delivery: {
     method: DeliveryMethod;
     street: string;
@@ -87,6 +91,7 @@ export default function RenewPassport() {
   const [form, setForm] = useState<FormState>(() => ({
     confirmed: true,
     photoUploaded: true,
+    appointment: { date: "2026-07-18", time: "19:00", office: "office1" },
     delivery: {
       method: "home",
       street: locale === "ar" ? "طريق العروبة" : "Al Urubah Road",
@@ -102,6 +107,7 @@ export default function RenewPassport() {
   const steps: Step[] = [
     { label: t("step_verify"), icon: Check },
     { label: t("step_documents"), icon: FileText },
+    { label: t("step_appointment"), icon: Calendar },
     { label: t("step_delivery"), icon: Truck },
     { label: t("step_review"), icon: Pencil },
     { label: t("step_pay"), icon: CreditCard },
@@ -109,6 +115,7 @@ export default function RenewPassport() {
   const stepLabels: TranslationKey[] = [
     "step_verify",
     "step_documents",
+    "step_appointment",
     "step_delivery",
     "step_review",
   ];
@@ -120,6 +127,8 @@ export default function RenewPassport() {
       case 1:
         return form.photoUploaded;
       case 2:
+        return !!(form.appointment.date && form.appointment.time && form.appointment.office);
+      case 3:
         return !!form.delivery.method;
       default:
         return true;
@@ -128,7 +137,7 @@ export default function RenewPassport() {
 
   const goNext = () => {
     if (!canProceed()) return;
-    setStep((s) => Math.min(s + 1, 3));
+    setStep((s) => Math.min(s + 1, 4));
     window.scrollTo({ top: 0 });
   };
   const goBack = () => {
@@ -222,8 +231,9 @@ export default function RenewPassport() {
       <div className="mt-5">
         {step === 0 && <VerifyStep form={form} setForm={setForm} />}
         {step === 1 && <DocumentsStep setForm={setForm} />}
-        {step === 2 && <DeliveryStep form={form} setForm={setForm} />}
-        {step === 3 && (
+        {step === 2 && <AppointmentStep form={form} setForm={setForm} />}
+        {step === 3 && <DeliveryStep form={form} setForm={setForm} />}
+        {step === 4 && (
           <ReviewStep
             form={form}
             setForm={setForm}
@@ -235,8 +245,8 @@ export default function RenewPassport() {
         )}
       </div>
 
-      {/* Bottom actions (steps 0–2; the Review step pays inline) */}
-      {step <= 2 && (
+      {/* Bottom actions (steps 0–3; the Review step pays inline) */}
+      {step <= 3 && (
         <div className="mt-8 border-t border-gray-200 pt-6 dark:border-gray-700">
           <div
             className={
@@ -404,7 +414,212 @@ function DocumentsStep({
   );
 }
 
-/* ---------- Step 3: Delivery ---------- */
+/* ---------- Step 3: Appointment ---------- */
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function AppointmentStep({
+  form,
+  setForm,
+}: {
+  form: FormState;
+  setForm: React.Dispatch<React.SetStateAction<FormState>>;
+}) {
+  const { t, locale } = useLocale();
+  const loc = locale === "ar" ? "ar-SA" : "en-US";
+  const appt = form.appointment;
+  const setAppt = (patch: Partial<FormState["appointment"]>) =>
+    setForm((f) => ({ ...f, appointment: { ...f.appointment, ...patch } }));
+
+  const [view, setView] = useState(() => {
+    const d = new Date(appt.date);
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const minDate = new Date(2026, 6, 13); // earliest bookable day
+
+  const year = view.getFullYear();
+  const month = view.getMonth();
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (number | null)[] = [
+    ...Array<null>(firstDow).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+  const weekdays = Array.from({ length: 7 }, (_, i) =>
+    new Intl.DateTimeFormat(loc, { weekday: "short" }).format(new Date(2024, 0, 7 + i)),
+  );
+  const monthTitle = new Intl.DateTimeFormat(loc, { month: "long", year: "numeric" }).format(view);
+
+  const times: { key: TranslationKey; slots: string[] }[] = [
+    { key: "appt_morning", slots: ["08:00", "09:00", "10:00"] },
+    { key: "appt_afternoon", slots: ["12:00", "13:30", "14:00"] },
+    { key: "appt_evening", slots: ["17:00", "18:30", "19:00"] },
+  ];
+  const offices: { id: "office1" | "office2"; name: TranslationKey; meta: TranslationKey }[] = [
+    { id: "office1", name: "office1_name", meta: "office1_meta" },
+    { id: "office2", name: "office2_name", meta: "office2_meta" },
+  ];
+
+  return (
+    <>
+      <p className="mb-5 text-[13px] text-gray-500 dark:text-gray-400">{t("appt_intro")}</p>
+
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+        {/* Left: calendar + offices */}
+        <div className="flex flex-col gap-5">
+          <Card className="p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-gray-900 dark:text-white">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                {monthTitle}
+              </h2>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setView(new Date(year, month - 1, 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                  aria-label="previous month"
+                >
+                  <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+                </button>
+                <button
+                  onClick={() => setView(new Date(year, month + 1, 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                  aria-label="next month"
+                >
+                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {weekdays.map((w) => (
+                <div key={w} className="py-1 text-[12px] font-medium text-gray-400">
+                  {w}
+                </div>
+              ))}
+              {cells.map((day, i) => {
+                if (day === null) return <div key={`b${i}`} />;
+                const ds = `${year}-${pad2(month + 1)}-${pad2(day)}`;
+                const dayDate = new Date(year, month, day);
+                const disabled = dayDate < minDate;
+                const selected = ds === appt.date;
+                return (
+                  <button
+                    key={ds}
+                    disabled={disabled}
+                    onClick={() => setAppt({ date: ds })}
+                    className={
+                      "mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-[13px] transition-colors " +
+                      (selected
+                        ? "bg-sa-600 font-semibold text-white"
+                        : disabled
+                          ? "cursor-not-allowed text-gray-300 dark:text-gray-600"
+                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800")
+                    }
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <h2 className="mb-4 text-[15px] font-semibold text-gray-900 dark:text-white">
+              {t("appt_nearby")}
+            </h2>
+            <div className="flex flex-col gap-3">
+              {offices.map((o) => {
+                const selected = appt.office === o.id;
+                return (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => setAppt({ office: o.id })}
+                    className={
+                      "flex w-full items-center gap-3 rounded-xl border p-4 text-start transition-colors " +
+                      (selected
+                        ? "border-sa-600 ring-1 ring-sa-600"
+                        : "border-gray-200 hover:border-gray-300 dark:border-gray-700")
+                    }
+                  >
+                    <RadioDot selected={selected} />
+                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <span className="flex-1">
+                      <span className="block text-[14px] font-semibold text-gray-900 dark:text-white">
+                        {t(o.name)}
+                      </span>
+                      <span className="block text-[12px] text-gray-500 dark:text-gray-400">
+                        {t(o.meta)}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+
+          <button className="inline-flex items-center gap-1 self-start text-[14px] font-medium text-sa-600 hover:underline dark:text-sa-300">
+            {t("appt_skip")}
+            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+          </button>
+        </div>
+
+        {/* Right: time picker */}
+        <Card className="p-5">
+          <h2 className="mb-4 flex items-center gap-2 text-[15px] font-semibold text-gray-900 dark:text-white">
+            <Clock className="h-4 w-4 text-gray-400" />
+            {t("appt_pick_time")}
+          </h2>
+
+          <div className="flex flex-col gap-4">
+            {times.map((group) => (
+              <div key={group.key}>
+                <p className="mb-2 text-[13px] font-medium text-gray-600 dark:text-gray-300">
+                  {t(group.key)}
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {group.slots.map((slot) => {
+                    const selected = appt.time === slot;
+                    return (
+                      <button
+                        key={slot}
+                        onClick={() => setAppt({ time: slot })}
+                        className={
+                          "h-11 rounded-lg border text-[14px] font-medium tabular-nums transition-colors " +
+                          (selected
+                            ? "border-sa-600 bg-sa-600 text-white"
+                            : "border-gray-300 text-gray-700 hover:border-sa-400 dark:border-gray-600 dark:text-gray-200")
+                        }
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex items-start gap-2.5 rounded-lg bg-gray-50 p-3.5 dark:bg-gray-800/60">
+            <Calendar className="mt-0.5 h-4 w-4 text-gray-400" />
+            <div>
+              <p className="text-[14px] font-medium text-gray-900 dark:text-white">
+                {fmtApptLong(appt.date, appt.time, loc)}
+              </p>
+              <p className="text-[12px] text-gray-500 dark:text-gray-400">
+                {t(appt.office === "office1" ? "office1_name" : "office2_name")}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+/* ---------- Step 4: Delivery ---------- */
 function DeliveryStep({
   form,
   setForm,
@@ -540,6 +755,8 @@ function ReviewStep({
   const setPay = (patch: Partial<FormState["payment"]>) =>
     setForm((f) => ({ ...f, payment: { ...f.payment, ...patch } }));
   const applicant = `${user ? user.firstName[locale] : ""} · ${t("id_masked")}`;
+  const loc = locale === "ar" ? "ar-SA" : "en-US";
+  const apptShort = fmtApptShort(form.appointment.date, form.appointment.time, loc);
 
   return (
     <>
@@ -566,10 +783,10 @@ function ReviewStep({
               <SvcRow label={t("svc_type")} value={t("svc_type_val")} />
               <SvcRow
                 label={t("svc_appointment")}
-                value={t("svc_appointment_val")}
+                value={apptShort}
                 action={
                   <button
-                    onClick={() => onEdit(0)}
+                    onClick={() => onEdit(2)}
                     className="mt-1 inline-flex items-center gap-1 text-[13px] font-medium text-sa-600 hover:underline dark:text-sa-300"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -588,7 +805,7 @@ function ReviewStep({
                 {t("review_delivery")}
               </h2>
               <button
-                onClick={() => onEdit(2)}
+                onClick={() => onEdit(3)}
                 className="inline-flex items-center gap-1 text-[13px] font-medium text-sa-600 hover:underline dark:text-sa-300"
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -1025,4 +1242,26 @@ function MadaMark() {
       <span style={{ color: "#84BD00" }}>da</span>
     </span>
   );
+}
+
+/* ---------- Date/time formatting ---------- */
+function to12(time: string, loc: string) {
+  const [h, m] = time.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return new Intl.DateTimeFormat(loc, { hour: "numeric", minute: "2-digit", hour12: true }).format(
+    d,
+  );
+}
+
+function fmtApptShort(dateStr: string, time: string, loc: string) {
+  const d = new Date(dateStr);
+  const mon = new Intl.DateTimeFormat(loc, { month: "short" }).format(d);
+  return `${d.getDate()} ${mon} ${d.getFullYear()} · ${to12(time, loc)}`;
+}
+
+function fmtApptLong(dateStr: string, time: string, loc: string) {
+  const d = new Date(dateStr);
+  const mon = new Intl.DateTimeFormat(loc, { month: "long" }).format(d);
+  return `${d.getDate()} ${mon} ${d.getFullYear()} · ${to12(time, loc)}`;
 }

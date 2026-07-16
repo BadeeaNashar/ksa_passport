@@ -105,14 +105,17 @@ export function Header() {
                     key={item.to}
                     to={item.to}
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-md px-3.5 py-2 text-[15px] font-medium transition-colors",
+                      "relative inline-flex items-center gap-1 rounded-lg px-4 py-2.5 text-[15px] font-medium transition-colors",
                       active
                         ? "bg-sa-600 text-white shadow-xs"
                         : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800",
                     )}
                   >
                     {t(item.key)}
-                    <ChevronDown className="h-4 w-4 opacity-70" />
+                    <ChevronDown className={cn("h-4 w-4", active ? "opacity-90" : "opacity-70")} />
+                    {active && (
+                      <span className="absolute bottom-1.5 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-[#6FC49B]" />
+                    )}
                   </NavLink>
                 );
               })}
