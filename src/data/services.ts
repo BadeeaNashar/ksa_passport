@@ -3,13 +3,13 @@ import {
   RefreshCw,
   AlertTriangle,
   MapPin,
-  type LucideIcon,
-} from "lucide-react";
+  type IconType,
+} from "@/components/icons";
 import type { TranslationKey } from "@/i18n/translations";
 
 export interface ServiceItem {
   id: string;
-  icon: LucideIcon;
+  icon: IconType;
   titleKey: TranslationKey;
   descKey: TranslationKey;
   to: string;

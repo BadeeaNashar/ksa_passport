@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "@/components/icons";
 import { useLocale } from "@/i18n/LocaleContext";
 import { services } from "@/data/services";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";

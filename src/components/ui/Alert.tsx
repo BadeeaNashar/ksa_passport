@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Info, X } from "lucide-react";
+import { Info, X } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
 type Tone = "info" | "success" | "warning" | "error";

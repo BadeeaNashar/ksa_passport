@@ -1,29 +1,29 @@
-import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BookUser,
-  Check,
-  Clock,
-  MapPin,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, BookUser, Clock, RefreshCw } from "@/components/icons";
 import { useLocale } from "@/i18n/LocaleContext";
+import { useAuth } from "@/auth/AuthContext";
+import { useRequests } from "@/store/RequestsContext";
 import { services } from "@/data/services";
 import { Card } from "@/components/ui/Card";
+import { RequestCard } from "@/components/RequestCard";
 
 export default function Dashboard() {
-  const { t, dir } = useLocale();
+  const { t, dir, locale } = useLocale();
+  const { user } = useAuth();
+  const { getByOwner } = useRequests();
   const navigate = useNavigate();
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight;
+
+  if (!user) return null;
+
+  const recent = getByOwner(user.nationalId).slice(0, 3);
 
   return (
     <div className="container-dga animate-fade-in py-8">
       {/* Welcome */}
       <p className="text-[14px] text-gray-500 dark:text-gray-400">{t("welcome_back")}</p>
       <h1 className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
-        {t("user_name")}
+        {user.firstName[locale]}
       </h1>
 
       {/* Passport status card */}
@@ -38,16 +38,18 @@ export default function Dashboard() {
                 {t("passport_expires")}
               </p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {t("passport_expiry_date")}
+                {user.passportExpiryLong[locale]}
               </p>
               <div className="mt-1.5 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 text-[13px] text-gray-500 dark:text-gray-400">
                   <Clock className="h-3.5 w-3.5" />
-                  {t("validity_remaining")}
+                  {user.validityRemaining[locale]}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-warning-bg px-2.5 py-0.5 text-[12px] font-medium text-warning-text">
-                  {t("renew_soon")}
-                </span>
+                {user.renewSoon && (
+                  <span className="inline-flex items-center rounded-full bg-warning-bg px-2.5 py-0.5 text-[12px] font-medium text-warning-text">
+                    {t("renew_soon")}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -93,58 +95,22 @@ export default function Dashboard() {
       </div>
 
       {/* Recent activity */}
-      <h2 className="mt-10 mb-4 text-lg font-bold text-gray-900 dark:text-white">
-        {t("recent_activity")}
-      </h2>
-      <Card className="divide-y divide-gray-100 dark:divide-gray-700">
-        <ActivityRow
-          icon={RefreshCw}
-          title={t("act_renewal")}
-          meta={t("act_renewal_meta")}
-          badge={
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-bg px-2.5 py-1 text-[12px] font-medium text-warning-text">
-              <Clock className="h-3.5 w-3.5" />
-              {t("in_review")}
-            </span>
-          }
-        />
-        <ActivityRow
-          icon={MapPin}
-          title={t("act_address")}
-          meta={t("act_address_meta")}
-          badge={
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-bg px-2.5 py-1 text-[12px] font-medium text-success-text">
-              <Check className="h-3.5 w-3.5" />
-              {t("done")}
-            </span>
-          }
-        />
-      </Card>
-    </div>
-  );
-}
-
-function ActivityRow({
-  icon: Icon,
-  title,
-  meta,
-  badge,
-}: {
-  icon: typeof RefreshCw;
-  title: string;
-  meta: string;
-  badge: ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-4 p-4 sm:px-6">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300">
-        <Icon className="h-5 w-5" />
-      </span>
-      <div className="flex-1">
-        <p className="text-[14px] font-semibold text-gray-900 dark:text-white">{title}</p>
-        <p className="text-[12px] text-gray-500 dark:text-gray-400">{meta}</p>
-      </div>
-      {badge}
+      {recent.length > 0 && (
+        <>
+          <h2 className="mt-10 mb-4 text-lg font-bold text-gray-900 dark:text-white">
+            {t("recent_activity")}
+          </h2>
+          <div className="flex flex-col gap-4">
+            {recent.map((r) => (
+              <RequestCard
+                key={r.id}
+                request={r}
+                onView={(id) => navigate(`/track?ref=${encodeURIComponent(id)}`)}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

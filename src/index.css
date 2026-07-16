@@ -91,7 +91,14 @@
 
   /* Focus ring consistent with DGA accessibility spec */
   :focus-visible {
-    @apply outline-none ring-2 ring-sa-500 ring-offset-2 ring-offset-white;
+    @apply outline-none ring-2 ring-sa-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
+  }
+
+  /* Form fields manage their own focus styles — prevents a double border/ring */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply ring-0 ring-offset-0;
   }
 }
 

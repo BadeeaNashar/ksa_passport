@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { IconType } from "@/components/icons";
 
 export function ReadonlyField({
   label,
@@ -7,7 +7,7 @@ export function ReadonlyField({
 }: {
   label: string;
   value: string;
-  icon?: LucideIcon;
+  icon?: IconType;
 }) {
   return (
     <div className="flex flex-col gap-1.5">

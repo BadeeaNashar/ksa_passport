@@ -1,10 +1,10 @@
 import { Fragment } from "react";
-import { Check, type LucideIcon } from "lucide-react";
+import { Check, type IconType } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
 export interface Step {
   label: string;
-  icon: LucideIcon;
+  icon: IconType;
 }
 
 export function Stepper({

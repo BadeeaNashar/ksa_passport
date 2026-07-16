@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Phone, Mail, Eye, ZoomIn } from "lucide-react";
+import { Phone, Mail, Eye, ZoomIn } from "@/components/icons";
 import { useLocale } from "@/i18n/LocaleContext";
 import type { TranslationKey } from "@/i18n/translations";
 

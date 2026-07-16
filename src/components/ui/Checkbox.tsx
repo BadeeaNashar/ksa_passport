@@ -1,5 +1,5 @@
 import { useId, type InputHTMLAttributes } from "react";
-import { Check } from "lucide-react";
+import { Check } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
 interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {

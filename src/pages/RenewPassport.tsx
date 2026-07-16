@@ -19,8 +19,10 @@ import {
   Truck,
   User,
   Wallet,
-} from "lucide-react";
+} from "@/components/icons";
 import { useLocale } from "@/i18n/LocaleContext";
+import { useAuth } from "@/auth/AuthContext";
+import { useRequests } from "@/store/RequestsContext";
 import type { TranslationKey } from "@/i18n/translations";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Stepper, type Step } from "@/components/ui/Stepper";
@@ -47,6 +49,8 @@ const DELIVERY_FEE = 30;
 
 export default function RenewPassport() {
   const { t, dir } = useLocale();
+  const { user } = useAuth();
+  const { addRequest } = useRequests();
   const navigate = useNavigate();
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight;
 
@@ -105,7 +109,18 @@ export default function RenewPassport() {
   const goNext = () => {
     if (!canProceed()) return;
     if (step === 4) {
-      setRefNo("RNW-2026" + Math.floor(100000 + Math.random() * 900000));
+      const newRef = "RNW-2026" + Math.floor(100000 + Math.random() * 900000);
+      addRequest({
+        id: newRef,
+        owner: user?.nationalId ?? "",
+        type: "renew",
+        titleKey: "renew_passport",
+        status: "submitted",
+        submittedAt: new Date().toISOString().slice(0, 10),
+        fee: total,
+        delivery: form.delivery.method === "home" ? "delivery_home" : "delivery_pickup",
+      });
+      setRefNo(newRef);
       setSubmitted(true);
       window.scrollTo({ top: 0 });
       return;
@@ -193,7 +208,9 @@ function VerifyStep({
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const { user } = useAuth();
+  if (!user) return null;
   return (
     <>
       <p className="mb-5 flex items-center gap-1.5 text-[13px] text-gray-500 dark:text-gray-400">
@@ -207,9 +224,9 @@ function VerifyStep({
               {t("personal_info")}
             </h2>
             <div className="flex flex-col gap-4">
-              <ReadonlyField label={t("full_name")} value={t("full_name_val")} icon={User} />
-              <ReadonlyField label={t("dob")} value={t("dob_val")} icon={Calendar} />
-              <ReadonlyField label={t("nationality")} value={t("nationality_val")} icon={Flag} />
+              <ReadonlyField label={t("full_name")} value={user.name[locale]} icon={User} />
+              <ReadonlyField label={t("dob")} value={user.dob} icon={Calendar} />
+              <ReadonlyField label={t("nationality")} value={user.nationality[locale]} icon={Flag} />
             </div>
           </Card>
           <Card className="p-6">
@@ -219,12 +236,12 @@ function VerifyStep({
             <div className="flex flex-col gap-4">
               <ReadonlyField
                 label={t("current_passport_no")}
-                value={t("current_passport_val")}
+                value={user.passportNo}
                 icon={Copy}
               />
               <ReadonlyField
                 label={t("passport_expiry")}
-                value={t("passport_expiry_val")}
+                value={user.passportExpiry}
                 icon={Calendar}
               />
             </div>
@@ -236,8 +253,8 @@ function VerifyStep({
               {t("contact_details")}
             </h2>
             <div className="flex flex-col gap-4">
-              <ReadonlyField label={t("mobile")} value={t("mobile_val")} icon={Phone} />
-              <ReadonlyField label={t("email")} value={t("email_val")} icon={Mail} />
+              <ReadonlyField label={t("mobile")} value={user.mobile} icon={Phone} />
+              <ReadonlyField label={t("email")} value={user.email} icon={Mail} />
             </div>
           </Card>
         </div>
@@ -394,7 +411,8 @@ function ReviewStep({
   total: number;
   onEdit: (step: number) => void;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const { user } = useAuth();
   const branchLabels: Record<string, TranslationKey> = {
     riyadh: "branch_riyadh",
     jeddah: "branch_jeddah",
@@ -414,11 +432,11 @@ function ReviewStep({
       <p className="mb-5 text-[13px] text-gray-500 dark:text-gray-400">{t("review_intro")}</p>
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <ReviewCard title={t("personal_info")} onEdit={() => onEdit(0)}>
-          <ReviewRow label={t("full_name")} value={t("full_name_val")} />
-          <ReviewRow label={t("dob")} value={t("dob_val")} />
-          <ReviewRow label={t("nationality")} value={t("nationality_val")} />
-          <ReviewRow label={t("mobile")} value={t("mobile_val")} />
-          <ReviewRow label={t("email")} value={t("email_val")} />
+          <ReviewRow label={t("full_name")} value={user ? user.name[locale] : "—"} />
+          <ReviewRow label={t("dob")} value={user?.dob ?? "—"} />
+          <ReviewRow label={t("nationality")} value={user ? user.nationality[locale] : "—"} />
+          <ReviewRow label={t("mobile")} value={user?.mobile ?? "—"} />
+          <ReviewRow label={t("email")} value={user?.email ?? "—"} />
         </ReviewCard>
 
         <div className="flex flex-col gap-5">

@@ -1,4 +1,4 @@
-import { Construction } from "lucide-react";
+import { Construction } from "@/components/icons";
 import { useLocale } from "@/i18n/LocaleContext";
 import type { TranslationKey } from "@/i18n/translations";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";

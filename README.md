@@ -10,7 +10,7 @@ Screens are reproduced from the *Passport Portal — Low-Fi Wireframes* (Login �
 - **Vite 5** (dev/build)
 - **Tailwind CSS 3** with DGA design tokens (colors, typography, radius, shadows)
 - **React Router 6** (routing)
-- **lucide-react** (icons)
+- **Official DGA icons** — [`@platformscode/icons`](https://www.npmjs.com/package/@platformscode/icons) (National Design System "Platforms Code" set, CC BY 4.0), imported as React components via `vite-plugin-svgr` and re-exported from `src/components/icons.tsx`
 - **IBM Plex Sans Arabic** — self-hosted TTFs in `public/fonts` (weights 100–700), declared via `@font-face` in `src/index.css`
 
 ## Getting started

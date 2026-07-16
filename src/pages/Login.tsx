@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -7,18 +7,28 @@ import {
   Headphones,
   Info,
   User,
-} from "lucide-react";
+} from "@/components/icons";
 import { useLocale } from "@/i18n/LocaleContext";
+import { useAuth } from "@/auth/AuthContext";
 
 export default function Login() {
   const { t, dir, toggleLocale } = useLocale();
+  const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const [nid, setNid] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight;
+
+  if (isAuthenticated) return <Navigate to="/" replace />;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/");
+    const ok = login(nid);
+    if (ok) {
+      navigate("/", { replace: true });
+    } else {
+      setError(t("login_error"));
+    }
   };
 
   return (
@@ -44,17 +54,27 @@ export default function Login() {
             >
               {t("login_nid_label")}
             </label>
-            <div className="flex h-11 items-center gap-2.5 rounded-md border border-gray-300 bg-white px-3.5 focus-within:border-sa-500 focus-within:ring-2 focus-within:ring-sa-500/30 dark:border-gray-600 dark:bg-gray-900">
+            <div
+              className={`flex h-11 items-center gap-2.5 rounded-md border bg-white px-3.5 focus-within:ring-2 dark:bg-gray-900 ${
+                error
+                  ? "border-error focus-within:border-error focus-within:ring-error/30"
+                  : "border-gray-300 focus-within:border-sa-500 focus-within:ring-sa-500/30 dark:border-gray-600"
+              }`}
+            >
               <User className="h-4 w-4 shrink-0 text-gray-400" />
               <input
                 id="nid"
                 inputMode="numeric"
                 value={nid}
-                onChange={(e) => setNid(e.target.value)}
+                onChange={(e) => {
+                  setNid(e.target.value.replace(/[^\d]/g, ""));
+                  if (error) setError(null);
+                }}
                 placeholder={t("login_nid_ph")}
                 className="h-full flex-1 bg-transparent text-[15px] text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100"
               />
             </div>
+            {error && <p className="text-[12px] text-error-text">{error}</p>}
           </div>
 
           <button
@@ -69,12 +89,19 @@ export default function Login() {
             <Info className="h-3.5 w-3.5" />
             {t("login_nafath_note")}
           </p>
+
+          <p className="rounded-md bg-brand-subtle/60 px-3 py-2 text-center text-[12px] font-medium text-sa-700 dark:bg-sa-600/10 dark:text-sa-300">
+            {t("login_demo_hint")}
+          </p>
         </form>
 
         <div className="my-6 h-px w-full bg-gray-100 dark:bg-gray-700" />
 
         <div className="flex items-center justify-center gap-6 text-[13px] font-medium text-sa-600 dark:text-sa-300">
-          <button className="inline-flex items-center gap-1.5 hover:underline">
+          <button
+            onClick={() => navigate("/help")}
+            className="inline-flex items-center gap-1.5 hover:underline"
+          >
             <Headphones className="h-4 w-4" />
             {t("need_help")}
           </button>

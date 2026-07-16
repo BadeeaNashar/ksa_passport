@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { CheckCircle2, Trash2, UploadCloud } from "lucide-react";
+import { CheckCircle2, Trash2, UploadCloud } from "@/components/icons";
 import { useLocale } from "@/i18n/LocaleContext";
 import { cn } from "@/lib/cn";
 
